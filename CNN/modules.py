@@ -85,7 +85,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     mode = bn_param['mode']
     eps = bn_param.get('eps', 1e-5)
     momentum = bn_param.get('momentum', 0.9)
-    N, D = x.shape
+    D = x[0].shape
     running_mean = bn_param.get('running_mean', np.zeros(D, dtype=x.dtype))
     running_var = bn_param.get('running_var', np.zeros(D, dtype=x.dtype))
 
@@ -109,15 +109,15 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     else:
         raise ValueError('Invalid forward batchnorm mode %s' % mode)
 
-    bn_param['running_mean'] = running_mean
-    bn_param['running_var'] = running_var
+    # bn_param['running_mean'] = running_mean
+    # bn_param['running_var'] = running_var
     return out, cache
 
 def batchnorm_backward(dout, cache):
     (x, sample_mean, sample_var, sample_std, x_norm, beta, gamma, eps) = cache
     dgamma = np.sum(dout * x_norm, axis=0)
     dbeta = np.sum(dout, axis=0)
-    N = x.shape(0)
+    N, D, HH, WW = x.shape
     dx_norm = dout * gamma
     dsample_var = np.sum(-1 / 2 * dx_norm * (x - sample_mean) / (sample_var + eps) ** (3 / 2), axis = 0)
     dsample_mean = np.sum(-1 / sample_std * dx_norm, axis=0) + 1 / N * dsample_var * np.sum(-2 * (x - sample_mean), axis=0)

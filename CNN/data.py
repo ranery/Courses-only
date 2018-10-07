@@ -58,7 +58,8 @@ def fetch_testingset(path):
             'labels': labels}
 
 def loaddata():
-    path = "./MNIST"
+    # path = "./MNIST"
+    path = "C:\\Users\dell-pc\Desktop\大四上\Computer_Vision\CNN\MNIST"
     train_data = fetch_traingset(path)
     test_data = fetch_testingset(path)
     return train_data, test_data
