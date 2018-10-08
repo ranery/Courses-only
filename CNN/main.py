@@ -22,23 +22,43 @@ def imageC(data_list):
     return data
 
 # train
+print('Begin training ...')
 cnn = three_layer_cnn()
-epoch = 20
-batchSize = 3
+cnn.initial()
+epoch = 1
+batchSize = 30
 for i in range(epoch):
     for j in range(int(len(train_data['images']) / batchSize)):
+    # for j in range(30):
         data = imageC(train_data['images'][j*batchSize:(j+1)*batchSize])
         label = np.array(train_data['labels'][j*batchSize:(j+1)*batchSize])
-        cnn.initial()
         output = cnn.forward(data)
         loss, pred = cnn.compute_loss(output, label)
-        print('Epoch: %d; Item: %d; Loss: %f' % (i, (j+1)*batchSize, loss))
-        print(pred, label)
+        if j % 100 == 0:
+            count = 0
+            for k in range(batchSize):
+                if pred[k] == label[k]:
+                    count += 1
+            train_acc = count / batchSize
+            print('Epoch: %d; Item: %d; Loss: %f; Train acc: %f ' % (i, (j + 1) * batchSize, loss, train_acc))
         cnn.backward()
 
 # test
-# cls = cnn.test(test_data['images'])
+print('Begin testing ...')
+batchSize = 10
+test_pred = []
+for i in range(int(len(test_data['images']) / batchSize)):
+    output = cnn.inference(imageC(test_data['images'][i*batchSize:(i+1)*batchSize]))
+    label = np.array(test_data['labels'][i*batchSize:(i+1)*batchSize])
+    loss, pred = cnn.compute_loss(output, label)
+    test_pred.extend(pred)
 
-# score
+# accuracy
+count = 0
+for i in range(len(test_pred)):
+    if test_pred[i] == test_data['labels'][i]:
+        count += 1
+acc = count / len(test_pred)
+print('Accuracy for 3-layers convolutional neural networks: %f' % acc)
 
 # figure

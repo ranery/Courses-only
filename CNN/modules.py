@@ -105,6 +105,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         running_std = np.sqrt(running_var + eps)
         x_norm = (x - running_mean) / running_std
         out = x_norm * gamma + beta
+        cache = {}
 
     else:
         raise ValueError('Invalid forward batchnorm mode %s' % mode)
@@ -129,6 +130,12 @@ def conv_relu_forward(x, w, b, conv_param):
     out, relu_cache = rule_forward(var)
     cache = (conv_cache, relu_cache)
     return out, cache
+
+def conv_relu_backward(dout, cache):
+    conv_cache, relu_cache = cache
+    dvar = relu_backward(dout, relu_cache)
+    dx, dw, db = conv_backward(dvar, conv_cache)
+    return dx, dw, db
 
 def conv_bn_relu_forward(x, w, b, gamma, beta, conv_param, bn_param):
     var1, conv_cache = conv_forward(x, w, b, conv_param)
