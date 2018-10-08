@@ -86,10 +86,11 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     eps = bn_param.get('eps', 1e-5)
     momentum = bn_param.get('momentum', 0.9)
     D = x[0].shape
-    running_mean = bn_param.get('running_mean', np.zeros(D, dtype=x.dtype))
-    running_var = bn_param.get('running_var', np.zeros(D, dtype=x.dtype))
 
     if mode == 'train':
+        running_mean = np.zeros(D, dtype=x.dtype)
+        running_var = np.zeros(D, dtype=x.dtype)
+
         sample_mean = np.mean(x, axis=0)
         sample_var = np.var(x, axis=0)
         sample_std = np.sqrt(sample_var + eps)
@@ -102,10 +103,11 @@ def batchnorm_forward(x, gamma, beta, bn_param):
 
         cache = (x, sample_mean, sample_var, sample_std, x_norm, beta, gamma, eps)
     elif mode == 'test':
-        running_std = np.sqrt(running_var + eps)
+        running_mean = bn_param['running_mean']
+        running_std = bn_param['running_std']
         x_norm = (x - running_mean) / running_std
         out = x_norm * gamma + beta
-        cache = {}
+        cache = (running_mean, running_std)
 
     else:
         raise ValueError('Invalid forward batchnorm mode %s' % mode)
@@ -125,6 +127,13 @@ def batchnorm_backward(dout, cache):
     dx = 1 / sample_std * dx_norm + dsample_var * 2 / N * (x - sample_mean) + 1 / N * dsample_mean
     return dx, dgamma, dbeta
 
+def dropout_forward(x, dp_param):
+    p, mode = dp_param['p'], dp_param['mode']
+    mask = None
+    out = None
+    if mode == 'train':
+        mask = 1.0 * (np.random.rand(x.shape) > p)
+
 def conv_relu_forward(x, w, b, conv_param):
     var, conv_cache = conv_forward(x, w, b, conv_param)
     out, relu_cache = rule_forward(var)
@@ -142,7 +151,12 @@ def conv_bn_relu_forward(x, w, b, gamma, beta, conv_param, bn_param):
     var2, bn_cache = batchnorm_forward(var1, gamma, beta, bn_param)
     out, relu_cache = relu_forward(var2)
     cache = (conv_cache, bn_cache, relu_cache)
-    return out, cache
+    if bn_param['mode'] == 'train':
+        x, mean, var, std, x_norm, beta, gamma, eps = bn_cache
+        return out, cache, mean, std
+    else:
+        mean, std = bn_cache
+        return out, cache, mean, std
 
 def conv_bn_relu_backward(dout, cache):
     conv_cache, bn_cache, relu_cache = cache

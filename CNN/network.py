@@ -10,7 +10,7 @@ from modules import *
 class three_layer_cnn(object):
     def __init__(self):
         self.epoch = None
-        self.config = {'learning_rate': 1e-4,'decay_rate': 0.99, 'epsilon': 1e-8}
+        self.config = {'learning_rate': 1e-3,'decay_rate': 0.99, 'epsilon': 1e-8}
         self.gamma1 = 0.9
         self.beta1 = 0.1
         self.gamma2 = 0.9
@@ -19,6 +19,8 @@ class three_layer_cnn(object):
         self.beta3 = 0.1
         self.conv_param = {'stride': 2, 'pad': 1}
         self.bn_param = {'mode': 'train'}
+        self.mean1, self.mean2, self.mean3 = None, None, None
+        self.std1, self.std2, self.std3 = None, None, None
 
     def initial(self):
         self.w1, self.b1 = weight_init(1, 1, 4, 4)
@@ -26,17 +28,50 @@ class three_layer_cnn(object):
         self.w3, self.b3 = weight_init(10, 2, 9, 9)
 
     def forward(self, x):
-        self.var1, self.cache1 = conv_bn_relu_forward(x, self.w1, self.b1, self.gamma1, self.beta1, self.conv_param, self.bn_param)
-        self.var2, self.cache2 = conv_bn_relu_forward(self.var1, self.w2, self.b2, self.gamma2, self.beta2, self.conv_param, self.bn_param)
-        self.out, self.cache = conv_bn_relu_forward(self.var2, self.w3, self.b3, self.gamma3, self.beta3, self.conv_param, self.bn_param)
+        self.bn_param['running_mean'] = self.mean1
+        self.bn_param['running_std'] = self.std1
+        self.var1, self.cache1, self.mean1, self.std1 = conv_bn_relu_forward(x, self.w1, self.b1, self.gamma1, self.beta1, self.conv_param, self.bn_param)
+        self.bn_param['running_mean'] = self.mean2
+        self.bn_param['running_std'] = self.std2
+        self.var2, self.cache2, self.mean2, self.std2 = conv_bn_relu_forward(self.var1, self.w2, self.b2, self.gamma2, self.beta2, self.conv_param, self.bn_param)
+        self.bn_param['running_mean'] = self.mean3
+        self.bn_param['running_std'] = self.std3
+        self.out, self.cache, self.mean3, self.std3 = conv_bn_relu_forward(self.var2, self.w3, self.b3, self.gamma3, self.beta3, self.conv_param, self.bn_param)
         return self.out
 
     def inference(self, x):
         self.bn_param['mode'] = 'test'
         out = self.forward(x)
+        self.bn_param['mode'] = 'train'
         return out
 
-    def compute_loss(self, out, y):
+    def softmax_loss(self, out, y, mode='train'):
+        # pred
+        pred = []
+        for i in range(len(out)):
+            score = out[i].reshape(10, 1)
+            predict = np.where(score == max(score))[0]
+            if len(predict) > 1:
+                pred.append(int(predict[0]))
+            else:
+                pred.append(int(predict))
+
+        # loss
+        shifted_logits = out - np.max(out, axis=1, keepdims=True)
+        Z = np.sum(np.exp(shifted_logits), axis=1, keepdims=True)
+        log_probs = shifted_logits - np.log(Z)
+        probs = np.exp(log_probs)
+        N = out.shape[0]
+        loss = -np.sum(log_probs[np.arange(N), y]) / N
+
+        # grad
+        if mode == 'train':
+            self.dout = probs.copy()
+            self.dout[np.arange(N), y] -= 1
+            self.dout /= N
+        return loss, pred
+
+    def svm_loss(self, out, y, mode='train'):
         # pred
         pred = []
         for i in range(len(out)):
@@ -55,9 +90,10 @@ class three_layer_cnn(object):
         # loss += 0.5 * (np.sum(self.w1 * self.w1) + np.sum(self.w2 * self.w2) + np.sum(self.w3 * self.w3))
 
         # grad
-        margin[margin > 0] = 1
-        margin[range(len(out)), y] = -1 * np.sum(margin, axis=1)
-        self.dout = margin
+        if mode == 'train':
+            margin[margin > 0] = 1
+            margin[range(len(out)), y] = -1 * np.sum(margin, axis=1)
+            self.dout = margin
         return loss, pred
 
     def backward(self):
