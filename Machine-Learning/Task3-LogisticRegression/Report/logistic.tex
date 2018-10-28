@@ -1,0 +1,255 @@
+\documentclass[UTF-8, a4paper, 10pt]{article}
+
+\usepackage{xeCJK}
+\usepackage{graphicx}
+\graphicspath{{figure/}}
+\usepackage[unicode]{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black}
+\usepackage{cite}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\numberwithin{equation}{section}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{fontspec}
+\usepackage{courier}
+\usepackage{tikz-timing}
+
+\lstset{
+    basicstyle=\scriptsize\ttfamily,
+    numbers=left,                                        % 在左侧显示行号
+    keywordstyle=\color[RGB]{40,40,255},                 % 设定关键字颜色
+    frame=trbl,
+    numberstyle=\scriptsize\color{darkgray},           % 设定行号格式
+    commentstyle=\it\color[RGB]{0,96,96},                % 设置代码注释的格式
+    stringstyle=\ttfamily\slshape\color[RGB]{128,0,0},   % 设置字符串格式
+    showstringspaces=false,                              % 不显示字符串中的空格
+    language=python,                                     % 设置语言
+}
+
+
+\linespread{1.0}
+\setlength{\parskip}{0.5\baselineskip}
+
+\makeatletter
+\let\@afterindentfalse\@afterindenttrue
+\@afterindenttrue
+\makeatother
+\setlength{\parindent}{2em}
+
+\addtolength{\topmargin}{-70pt}
+\setlength{\oddsidemargin}{0.63cm}
+\setlength{\evensidemargin}{\oddsidemargin}
+\setlength{\textwidth}{15.66cm}
+\setlength{\textheight}{25.00cm}
+
+\newcommand{\chuhao}{\fontsize{42pt}{\baselineskip}\selectfont}
+\newcommand{\xiaochuhao}{\fontsize{36pt}{\baselineskip}\selectfont}
+\newcommand{\yihao}{\fontsize{28pt}{\baselineskip}\selectfont}
+\newcommand{\erhao}{\fontsize{21pt}{\baselineskip}\selectfont}
+\newcommand{\xiaoerhao}{\fontsize{18pt}{\baselineskip}\selectfont}
+\newcommand{\sanhao}{\fontsize{15.75pt}{\baselineskip}\selectfont}
+\newcommand{\sihao}{\fontsize{14pt}{\baselineskip}\selectfont}
+\newcommand{\xiaosihao}{\fontsize{12pt}{\baselineskip}\selectfont}
+\newcommand{\wuhao}{\fontsize{10.5pt}{\baselineskip}\selectfont}
+\newcommand{\xiaowuhao}{\fontsize{9pt}{\baselineskip}\selectfont}
+\newcommand{\liuhao}{\fontsize{7.875pt}{\baselineskip}\selectfont}
+\newcommand{\qihao}{\fontsize{5.25pt}{\baselineskip}\selectfont}
+
+\begin{document}
+
+\begin{titlepage}
+    \begin{center}
+    \phantom{Start!}
+	\vspace{2cm}
+	\includegraphics[width=350pt]{HUST.pdf} \\
+    \vspace{1cm}
+     \center{
+       	  \textbf{\yihao 实\quad 验\quad 报\quad 告}\\
+       	  \vspace{0.5cm}
+          \textbf{\sanhao （2017 / 2018学年\quad 第2学期）}
+      }
+      \vspace{2.5cm}
+      \begin{table}[!hbp]
+      \centering
+      \renewcommand\arraystretch{1.5}
+     	\begin{tabular}{|c|c|}
+     		\hline
+     		课程名称 & 机器学习导论 \\
+     		\hline
+     		实验名称 & ~~~~~~Logistic Regression Classifier~~~~~~ \\
+     		\hline
+     		实验时间&\multicolumn{1}{c|}{2018年5月29日}\\
+     		\hline
+     		指导教师 & 王邦 \\
+     		\hline
+     		\end{tabular}     		
+       \end{table}
+       \vspace{2cm}
+      \begin{table}[htbp]
+      \centering
+      \renewcommand\arraystretch{1.5}
+     	\begin{tabular}{|c|c|c|c|}
+     		\hline
+            \qquad ~~姓名~~~~~  & \qquad ~~游浩然~~~~~  & \qquad 学号~~~~~ & \qquad U201515429~~~~~ \\
+     		\hline
+     		\end{tabular}
+       \end{table}
+       \date{2018年5月29日}
+     \end{center}
+\end{titlepage}
+
+\section{问题重述}
+\begin{itemize}
+  \item 钞票数据集（Banknote Dataset）涉及根据给定钞票的4个度量的特征。据此预测是真钞还是假钞。
+\end{itemize}
+
+\section{Python Code for Logistic regression}
+\subsection{logistic}
+\begin{lstlisting}[language=python]
+# -*- coding: utf-8 -*-
+"""
+@author : Haoran You
+
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+# from bigfloat import exp
+import random
+import csv
+import os
+
+class logistic():
+    def name(self):
+        return 'Logistic Model'
+
+    def sigmoid(self, x):
+        return 1.0 / (1 + np.exp(x))
+
+    def stoGradAscent(self, data, label, numIter):
+        m, n = np.shape(data)
+        weight = [float(1.0) for i in range(n)]
+        for j in range(numIter):
+            dataIndex = list(range(m))
+            for i in range(m):
+                # alpha = 4 / (1.0+j+i) + 0.0001
+                alpha = 0.00001
+                randIndex = int(random.uniform(0, len(dataIndex)))
+                h = self.sigmoid(np.sum(np.dot(data[randIndex], weight)))
+                error = label[randIndex] - h
+                weight += alpha * error * np.array(data[randIndex])
+                del(dataIndex[randIndex])
+        return weight
+
+    def classifyVector(self, x, weight):
+        pred = self.sigmoid(np.sum(np.dot(x, weight)))
+        if pred > 0.5: return 1.0
+        else: return 0.0
+
+    def train(self, data, label, numIter):
+        self.train_data = data
+        self.train_label = label
+        self.train_weight = self.stoGradAscent(data, label, numIter)
+
+    def val(self, data, label):
+        self.val_data = data
+        self.val_label = label
+        error = 0
+        numTest = np.shape(data)[0]
+        for i in range(numTest):
+            pred = self.classifyVector(data[i], self.train_weight)
+            # print(pred, label[i])
+            if int(pred) != int(label[i]):
+                error += 1
+        errorRate = (float(error) / numTest)
+        print('Error rate of val data : %f' % errorRate)
+
+    def test(self, data):
+        if os.path.exists('results.csv'):
+            os.remove('results.csv')
+        f = open('results.csv', 'a', newline='')
+        csv_write = csv.writer(f, dialect='excel')
+        i = 0
+        for vector in data:
+            result = []
+            i += 1
+            pred = self.classifyVector(vector, self.train_weight)
+            result.append(i)
+            for item in vector:
+                result.append(item)
+            result.append(pred)
+            csv_write.writerow(result)
+\end{lstlisting}
+\subsection{data}
+\begin{lstlisting}[language=python]
+# -*- coding: utf-8 -*-
+"""
+@author : Haoran You
+
+"""
+import random
+
+def parse_file(filename, has_cls=True):
+    f = open(filename, 'r', encoding='gbk')
+    data, label = [], []
+    for line in f.readlines():
+        if has_cls == True:
+            data_str = line.strip().split(',')[:-1]
+            data_list = []
+            for data_item in data_str:
+                data_list.append(float(data_item))
+            data.append(data_list)
+            label.append(float(line.strip().split(',')[-1]))
+        else:
+            data_str = line.strip().split(',')
+            data_list = []
+            for data_item in data_str:
+                data_list.append(float(data_item))
+            data.append(data_list)
+    return data, label
+
+def divide(data, label):
+    num_train = int(0.8*len(data))
+    train_data, train_label = [], []
+    val_data, val_label = [], []
+    index = random.sample(range(len(data)), num_train)
+    for i in range(0, len(data)):
+        if i in index:
+            train_data.append(data[i])
+            train_label.append(label[i])
+        else:
+            val_data.append(data[i])
+            val_label.append(label[i])
+    return train_data, train_label, val_data, val_label
+
+def dataset():
+    data, label = parse_file('train.txt')
+    train_data, train_label, val_data, val_label = divide(data, label)
+    test_data, test_label = parse_file('test.txt', has_cls=False)
+    print('number of train : ', len(train_data))
+    print('number of val   : ', len(val_data))
+    print('number of test  : ', len(test_data))
+    return train_data, train_label, val_data, val_label, test_data
+\end{lstlisting}
+\subsection{Main}
+\begin{lstlisting}[language=python]
+# -*- coding: utf-8 -*-
+"""
+@author : Haoran You
+
+"""
+from data import dataset
+from logistic import logistic
+
+# load data
+train_data, train_label, val_data, val_label, test_data = dataset()
+# train
+logistic = logistic()
+logistic.train(train_data, train_label, 30)
+# val
+logistic.val(val_data, val_label)
+# test
+logistic.test(test_data)
+\end{lstlisting}
+
+\end{document} 

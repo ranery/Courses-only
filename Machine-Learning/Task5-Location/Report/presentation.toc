@@ -1,0 +1,8 @@
+\select@language {english}
+\beamer@sectionintoc {1}{机器学习回顾}{2}{0}{1}
+\beamer@subsectionintoc {1}{1}{优化问题}{4}{0}{1}
+\beamer@subsectionintoc {1}{2}{分/聚类问题}{5}{0}{1}
+\beamer@subsectionintoc {1}{3}{预测问题}{6}{0}{1}
+\beamer@sectionintoc {2}{Location Assignment}{7}{0}{2}
+\beamer@subsectionintoc {2}{1}{Method}{8}{0}{2}
+\beamer@subsectionintoc {2}{2}{Result}{9}{0}{2}
